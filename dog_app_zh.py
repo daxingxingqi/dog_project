@@ -60,6 +60,8 @@
 # - `train_targets`, `valid_targets`, `test_targets` - 包含独热编码分类标签的numpy数组
 # - `dog_names` - 由字符串构成的与标签相对应的狗的种类
 
+# # 提问1 为什么earlystop在我设置了patience等于10后，val_loss 已经开始上升了，但是还是没有自动停止？ ----Step3
+
 # [sklearn.datasets](http://scikit-learn.org/stable/datasets/index.html) scikit-learn’s datasets.load_files for directories of text files where the name of each directory is the name of each category and each file inside of each directory corresponds to one sample from that category
 # ``` python
 # from sklearn import datasets
@@ -103,7 +105,7 @@
 #     print (item[20:-1])
 # ```    
 
-# In[1]:
+# In[25]:
 
 
 from sklearn.datasets import load_files       
@@ -124,7 +126,7 @@ valid_files, valid_targets = load_dataset('/data/dog_images/valid')
 test_files, test_targets = load_dataset('/data/dog_images/test')
 
 # load list of dog names
-dog_names = [item[20:-1] for item in sorted(glob("/data/dog_images/train/*/"))]
+dog_names = [item[27:-1] for item in sorted(glob("/data/dog_images/train/*/"))]
 
 # print statistics about the dataset
 print('There are %d total dog categories.' % len(dog_names))
@@ -134,7 +136,11 @@ print('There are %d validation dog images.' % len(valid_files))
 print('There are %d test dog images.'% len(test_files))
 
 
-# ## 不知道为什么dog_names 会出现 in/00x.
+# #### 修改一 
+# 改正 从 [item[20:-1] 到 [item[27:-1]
+# >``` python
+# dog_names = [item[27:-1] for item in sorted(glob("/data/dog_images/train/*/"))]
+# ```
 
 # In[2]:
 
@@ -192,14 +198,14 @@ human_files
 # 
 # 在如下代码单元中，我们将演示如何使用这个检测模型在样本图像中找到人脸。
 # 
-# >**openCV cv2.imread() loads images as BGR while numpy.imread() loads them as RGB.**
+# openCV cv2.imread() loads images as BGR while numpy.imread() loads them as RGB.
 
 # In[5]:
 
 
 import cv2                
 import matplotlib.pyplot as plt                        
-get_ipython().magic('matplotlib inline')
+get_ipython().run_line_magic('matplotlib', 'inline')
 
 # 提取预训练的人脸检测模型
 face_cascade = cv2.CascadeClassifier('haarcascades/haarcascade_frontalface_alt.xml')
@@ -263,6 +269,15 @@ def face_detector(img_path):
 # 
 # 理想情况下，人图像中检测到人脸的概率应当为100%，而狗图像中检测到人脸的概率应该为0%。你会发现我们的算法并非完美，但结果仍然是可以接受的。我们从每个数据集中提取前100个图像的文件路径，并将它们存储在`human_files_short`和`dog_files_short`中。
 
+# #### 修改二
+# 直接使用np.mean 来计算平均值,使用
+# ``` python
+# hface_in_human = [face_detector(item) for item in human_files_short]
+# hface_in_human.count(True)/len(hface_in_human)*100
+# 
+# np.mean([face_detector(human) for human in human_files_short])
+# ```
+
 # In[7]:
 
 
@@ -273,11 +288,14 @@ dog_files_short = train_files[:100]
 
 ## TODO: 基于human_files_short和dog_files_short
 ## 中的图像测试face_detector的表现
-hface_in_human = [face_detector(item) for item in human_files_short]
-hface_in_dog = [face_detector(item) for item in dog_files_short]
+#hface_in_human = [face_detector(item) for item in human_files_short]
+#hface_in_dog = [face_detector(item) for item in dog_files_short]
+
+faces_in_human = np.mean([face_detector(human) for human in human_files_short])
+faces_in_dog = np.mean([face_detector(dog) for dog in dog_files_short])
 # 打印数据集的数据量
-print('There are {0:.0f}% huamn faces in human_files,'.format(hface_in_human.count(True)/len(hface_in_human)*100),
-     '{0:.0f}%  human faces in dog_files.'.format(hface_in_dog.count(True)/len(hface_in_dog)*100))
+print('There are {0:.0f}% huamn faces in human_files,'.format(faces_in_human*100),
+     '{0:.0f}%  human faces in dog_files.'.format(faces_in_dog*100))
 
 
 # ---
@@ -291,14 +309,15 @@ print('There are {0:.0f}% huamn faces in human_files,'.format(hface_in_human.cou
 # 
 # __回答:__ 
 # 
-# >我认为这样的要求不合理，因为在实际操作中，有很大的几率摄像头不会捕捉到清晰的人脸。
+# 
+# 我认为这样的要求不合理，因为在实际操作中，有很大的几率摄像头不会捕捉到清晰的人脸。
 # 
 # 
-# >1.可以直接在opencv后面使用mlp或cnn进行训练-先用opencv处理图像，再用mlp和cnn对图像进行学习，并输出。
+# 1.可以直接在opencv后面使用mlp或cnn进行训练-先用opencv处理图像，再用mlp和cnn对图像进行学习，并输出。
 # 
-# >2.如果使用CNN或者mlp，可以旋转，拉伸，模糊一下图像，并把这些生成的图像加入数据库，然后再次训练，这样训练好的识别器就可以学习到图片在不同情况下的信息。
+# 2.如果使用CNN或者mlp，可以旋转，拉伸，模糊一下图像，并把这些生成的图像加入数据库，然后再次训练，这样训练好的识别器就可以学习到图片在不同情况下的信息。
 # 
-# 
+# 使用Haar Cascades技术来检测人脸的原理请参阅：[Face Detection using Haar Cascades] (https://docs.opencv.org/3.3.0/d7/d8b/tutorial_py_face_detection.html)
 
 # ---
 # 
@@ -306,35 +325,30 @@ print('There are {0:.0f}% huamn faces in human_files,'.format(hface_in_human.cou
 # ### 选做：
 # 
 # 我们建议在你的算法中使用opencv的人脸检测模型去检测人类图像，不过你可以自由地探索其他的方法，尤其是尝试使用深度学习来解决它:)。请用下方的代码单元来设计和测试你的面部监测算法。如果你决定完成这个_选做_任务，你需要报告算法在每一个数据集上的表现。
-# 
-# 答：
-# >这显然不是一个很好的模型，在实际应用中不会使用，理由如下：
-# 
-# >1.时间太长，训练的数据太多。
-# 
-# >2.损失了图像的色彩信息。
 
-# In[8]:
+# In[ ]:
 
 
 features = [cv2.cvtColor(cv2.imread(item), cv2.COLOR_BGR2GRAY) for item in human_files]
 target = np.ones(human_files.shape[0])
 
 
-# In[9]:
+# In[ ]:
 
 
 features = np.array(features).reshape(np.array(features).shape[0], 1, 250, 250)
 
 
-# In[10]:
+# In[ ]:
 
 
+## (选做) TODO: 报告另一个面部检测算法在LFW数据集上的表现
+### 你可以随意使用所需的代码单元数
 from sklearn.model_selection import train_test_split
 X_train, X_test, y_train, y_test = train_test_split(features, target, test_size = 0.2, random_state = 42) 
 
 
-# In[11]:
+# In[ ]:
 
 
 X_train = X_train.astype('float32')/255
@@ -343,7 +357,7 @@ print(X_train.shape[0], 'train samples')
 print(X_test.shape[0], 'test samples')
 
 
-# In[12]:
+# In[ ]:
 
 
 # break training set into training and validation sets
@@ -360,7 +374,7 @@ print(X_test.shape[0], 'test samples')
 print(X_valid.shape[0], 'validation samples')
 
 
-# In[13]:
+# In[ ]:
 
 
 from keras.preprocessing.image import ImageDataGenerator
@@ -374,7 +388,7 @@ datagen_train = ImageDataGenerator(
 datagen_train.fit(X_train)
 
 
-# In[14]:
+# In[ ]:
 
 
 from keras.models import Sequential
@@ -393,14 +407,14 @@ model.add(Dense(1, activation='sigmoid'))
 model.summary()
 
 
-# In[15]:
+# In[ ]:
 
 
 model.compile(loss='binary_crossentropy', optimizer='adam', 
               metrics=['accuracy'])
 
 
-# In[16]:
+# In[ ]:
 
 
 # evaluate test accuracy
@@ -411,7 +425,7 @@ accuracy = 100*score[1]
 print('Test accuracy: %.4f%%' % accuracy)
 
 
-# In[17]:
+# In[ ]:
 
 
 from keras.callbacks import ModelCheckpoint   
@@ -439,7 +453,7 @@ model.fit_generator(datagen_train.flow(X_train, y_train, batch_size=batch_size),
 # 
 # 注意： 默认为 1
 
-# In[18]:
+# In[ ]:
 
 
 #model.load_weights('dog.model.best.hdf5')
@@ -460,7 +474,7 @@ print('Test accuracy: %.4f%%' % accuracy)
 # 
 # ImageNet 这目前一个非常流行的数据集，常被用来测试图像分类等计算机视觉任务相关的算法。它包含超过一千万个 URL，每一个都链接到 [1000 categories](https://gist.github.com/yrevar/942d3a0ac09ec9e5eb3a) 中所对应的一个物体的图像。任给输入一个图像，该 ResNet-50 模型会返回一个对图像中物体的预测结果。
 
-# In[19]:
+# In[8]:
 
 
 from keras.applications.resnet50 import ResNet50
@@ -501,7 +515,7 @@ ResNet50_model = ResNet50(weights='imagenet')
 # 
 # tqdm - (https://pypi.org/project/tqdm/)
 
-# In[20]:
+# In[9]:
 
 
 from keras.preprocessing import image                  
@@ -534,7 +548,7 @@ def paths_to_tensor(img_paths):
 # 通过对预测出的向量取用 argmax 函数（找到有最大概率值的下标序号），我们可以得到一个整数，即模型预测到的物体的类别。进而根据这个 [清单](https://gist.github.com/yrevar/942d3a0ac09ec9e5eb3a)，我们能够知道这具体是哪个品种的狗狗。
 # 
 
-# In[21]:
+# In[10]:
 
 
 from keras.applications.resnet50 import preprocess_input, decode_predictions
@@ -551,7 +565,7 @@ def ResNet50_predict_labels(img_path):
 # 
 # 我们通过这些想法来完成下方的 `dog_detector` 函数，如果从图像中检测到狗就返回 `True`，否则返回 `False`。
 
-# In[22]:
+# In[11]:
 
 
 def dog_detector(img_path):
@@ -571,16 +585,25 @@ def dog_detector(img_path):
 # - `human_files_short`中图像检测到狗狗的百分比？
 # - `dog_files_short`中图像检测到狗狗的百分比？
 
-# In[23]:
+# #### 修改三
+# 直接使用np.mean 来计算平均值,使用
+# ``` python
+# hface_in_human = [face_detector(item) for item in human_files_short]
+# hface_in_human.count(True)/len(dog_in_human)*100
+# 
+# np.mean([dog_detector(human) for human in human_files_short])
+# ```
+
+# In[12]:
 
 
 ### TODO: 测试dog_detector函数在human_files_short和dog_files_short的表现
 
-dog_in_human = [dog_detector(item) for item in human_files_short]
-dog_in_dog = [dog_detector(item) for item in dog_files_short]
+faces_in_human = np.mean([dog_detector(human) for human in human_files_short])
+faces_in_dog = np.mean([dog_detector(dog) for dog in dog_files_short])
 # 打印数据集的数据量
-print('There are {0:.0f}% dog faces in human_files,'.format(dog_in_human.count(True)/len(dog_in_human)*100),
-     '{0:.0f}%  dog faces in dog_files.'.format(dog_in_dog.count(True)/len(dog_in_dog)*100))
+print('There are {0:.0f}% huamn faces in human_files,'.format(faces_in_human*100),
+     '{0:.0f}%  human faces in dog_files.'.format(faces_in_dog*100))
 
 
 # ---
@@ -624,7 +647,7 @@ print('There are {0:.0f}% dog faces in human_files,'.format(dog_in_human.count(T
 # 
 # 通过对每张图像的像素值除以255，我们对图像实现了归一化处理。
 
-# In[24]:
+# In[13]:
 
 
 from PIL import ImageFile                            
@@ -658,29 +681,54 @@ test_tensors = paths_to_tensor(test_files).astype('float32')/255
 # 
 # __回答:__ 我是使用上图的提示搭建的网络，上图可以缓慢的缩减维度，而又在同时慢慢的增加深度。对比之前自己写的CNN，如果增加深度或者减少维度太快的话，会损失很多的信息。
 
-# In[25]:
+# #### 修改四
+# 1.不同基本CNN结构原理资料-http://cs231n.github.io/convolutional-networks/#architectures
+# 
+# >The input layer (that contains the image) should be divisible by 2 many times. Common numbers include 32 (e.g. CIFAR-10), 64, 96 (e.g. STL-10), or 224 (e.g. common ImageNet ConvNets), 384, and 512.
+# 
+# >The conv layers should be using small filters (e.g. 3x3 or at most 5x5), using a stride of S=1, and crucially, padding the input volume with zeros in such way that the conv layer does not alter the spatial dimensions of the input. That is, when F=3, then using P=1 will retain the original size of the input. When F=5, P=2. For a general F, it can be seen that P=(F−1)/2 preserves the input size. If you must use bigger filter sizes (such as 7x7 or so), it is only common to see this on the very first conv layer that is looking at the input image.
+# 
+# >The pool layers are in charge of downsampling the spatial dimensions of the input. The most common setting is to use max-pooling with 2x2 receptive fields (i.e. F=2), and with a stride of 2 (i.e. S=2). Note that this discards exactly 75% of the activations in an input volume (due to downsampling by 2 in both width and height). Another slightly less common setting is to use 3x3 receptive fields with a stride of 2, but this makes. It is very uncommon to see receptive field sizes for max pooling that are larger than 3 because the pooling is then too lossy and aggressive. This usually leads to worse performance.
+# 
+# 2.加入：
+# 
+# >Batch normalization layer用来解决Covariate Shift的问题 参考-https://www.cnblogs.com/guoyaohua/p/8724433.html
+# 
+# >atchNorm为什么NB呢，关键还是效果好。①不仅仅极大提升了训练速度，收敛过程大大加快；②还能增加分类效果，一种解释是这是类似于Dropout的一种防止过拟合的正则化表达方式，所以不用Dropout也能达到相当的效果；③另外调参过程也简单多了，对于初始化要求没那么高，而且可以使用大的学习率等。总而言之，经过这么简单的变换，带来的好处多得很，这也是为何现在BN这么快流行起来的原因。
+# 
+# >Dropout layer用来降低模型复杂度，增强模型的泛化能力，防止过拟合，顺带降低了运算量
+
+# In[14]:
 
 
 from keras.layers import Conv2D, MaxPooling2D, GlobalAveragePooling2D
-from keras.layers import Dropout, Flatten, Dense, Activation
+from keras.layers import Dropout, Flatten, Dense, Activation, BatchNormalization
 from keras.models import Sequential
 
 model = Sequential()
 
 
 ### TODO: 定义你的网络架构
-model.add(Conv2D(filters=16, kernel_size=(3,3), padding='same', activation='relu', input_shape=(224, 224, 3)))     
+model.add(Conv2D(filters=16, kernel_size=(3,3), padding='same', activation='relu', input_shape=(224, 224, 3)))   
+model.add(BatchNormalization(axis = 1 ))
 model.add(MaxPooling2D(pool_size=(2, 2)))
+
 model.add(Conv2D(filters=32, kernel_size=(3,3), padding='same', activation='relu'))
+model.add(BatchNormalization(axis = 1 ))
 model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.2))
+
 model.add(Conv2D(filters=64, kernel_size=(3,3), padding='same', activation='relu'))
+model.add(BatchNormalization(axis = 1 ))
 model.add(MaxPooling2D(pool_size=(2, 2)))
+model.add(Dropout(0.2))
+
 model.add(GlobalAveragePooling2D())
 model.add(Dense(133, activation='softmax'))
 model.summary()
 
 
-# In[26]:
+# In[15]:
 
 
 ## 编译模型
@@ -704,58 +752,91 @@ model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accur
 # 
 # 
 
-# 数据增强实现如下
+# In[16]:
+
+
+'''
+from keras.preprocessing.image import ImageDataGenerator
+
+# create and configure augmented image generator
+datagen_train = ImageDataGenerator(
+    width_shift_range=0.1,  # randomly shift images horizontally (10% of total width)
+    height_shift_range=0.1,  # randomly shift images vertically (10% of total height)
+    horizontal_flip=True) # randomly flip images horizontally
+
+# fit augmented image generator on data
+datagen_train.fit(train_tensors)
+
+from keras.callbacks import ModelCheckpoint   
+
+batch_size = 32
+epochs = 100
+
+# train the model
+checkpointer = ModelCheckpoint(filepath='augtest/aug_model.weights.best.hdf5', verbose=1, 
+                               save_best_only=True)
+model.fit_generator(datagen_train.flow(train_tensors, train_targets, batch_size=batch_size),
+                    steps_per_epoch=train_tensors.shape[0] // batch_size,
+                    epochs=epochs, verbose=2, callbacks=[checkpointer],
+                    validation_data=(valid_tensors, valid_targets),
+                    validation_steps=valid_tensors.shape[0] // batch_size)
+                    '''
+
+
+# #### 修改五
+# 可以使用keras里的回调函数，就是当你的validation loss开始上升的时候，就马上停止训练，是为了防止过拟合的，参考代码如下：
 # ```python
-# from keras.preprocessing.image import ImageDataGenerator
+#   keras.callbacks.ModelCheckpoint(filepath, monitor='val_loss', verbose=0, save_best_only=False, save_weights_only=False, mode='auto', period=1)
 # 
-# # create and configure augmented image generator
-# datagen_train = ImageDataGenerator(
-#     width_shift_range=0.1,  # randomly shift images horizontally (10% of total width)
-#     height_shift_range=0.1,  # randomly shift images vertically (10% of total height)
-#     horizontal_flip=True) # randomly flip images horizontally
+# keras.callbacks.EarlyStopping(monitor='val_loss', patience = 10, verbose = 1)
+#   ```
+# 或者你也可以把epoch & model accuracy和epoch & model loss的关系图打印出来，然后找一个比较满意的epoch，参考代码如下：
 # 
-# # fit augmented image generator on data
-# datagen_train.fit(train_tensors)
-# 
-# from keras.callbacks import ModelCheckpoint   
-# 
-# batch_size = 32
-# epochs = 100
-# 
-# # train the model
-# checkpointer = ModelCheckpoint(filepath='augtest/aug_model.weights.best.hdf5', verbose=1, 
-#                                save_best_only=True)
-# model.fit_generator(datagen_train.flow(train_tensors, train_targets, batch_size=batch_size),
-#                     steps_per_epoch=train_tensors.shape[0] // batch_size,
-#                     epochs=epochs, verbose=2, callbacks=[checkpointer],
-#                     validation_data=(valid_tensors, valid_targets),
-#                     validation_steps=valid_tensors.shape[0] // batch_size)
+# ```python
+#     # Fit the model
+#     history = model.fit(X, Y, validation_split=0.33, epochs=150, batch_size=10, verbose=0)
+#     # list all data in history
+#     print(history.history.keys())
+#     # summarize history for accuracy
+#     plt.plot(history.history['acc'])
+#     plt.plot(history.history['val_acc'])
+#     plt.title('model accuracy')
+#     plt.ylabel('accuracy')
+#     plt.xlabel('epoch')
+#     plt.legend(['train', 'test'], loc='upper left')
+#     plt.show()
+#     # summarize history for loss
+#     plt.plot(history.history['loss'])
+#     plt.plot(history.history['val_loss'])
+#     plt.title('model loss')
+#     plt.ylabel('loss')
+#     plt.xlabel('epoch')
+#     plt.legend(['train', 'test'], loc='upper left')
+#     plt.show()
 # ```
 
-# In[28]:
+# In[17]:
 
 
-from keras.callbacks import ModelCheckpoint  
+from keras.callbacks import ModelCheckpoint, EarlyStopping
 
 ### TODO: 设置训练模型的epochs的数量
 
-epochs = 10
+epochs = 150
 
 ### 不要修改下方代码
 
-checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.from_scratch.hdf5', 
-                               verbose=1, save_best_only=True)
-
+checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.from_scratch.hdf5',  monitor='val_loss', verbose=1, save_best_only=True, mode='min')
+earlystopper = EarlyStopping(monitor='val_loss', patience = 10, verbose = 1)
 model.fit(train_tensors, train_targets, 
           validation_data=(valid_tensors, valid_targets),
-          epochs=epochs, batch_size=20, callbacks=[checkpointer], verbose=1)
+          epochs=epochs, batch_size=20, callbacks=[checkpointer, earlystopper], verbose=1)
 
 
-# In[29]:
+# In[18]:
 
 
 ## 加载具有最好验证loss的模型
-
 model.load_weights('saved_models/weights.best.from_scratch.hdf5')
 
 
@@ -763,7 +844,7 @@ model.load_weights('saved_models/weights.best.from_scratch.hdf5')
 # 
 # 在狗图像的测试数据集上试用你的模型。确保测试准确率大于1%。
 
-# In[30]:
+# In[19]:
 
 
 # 获取测试数据集中每一个图像所预测的狗品种的index
@@ -773,6 +854,39 @@ dog_breed_predictions = [np.argmax(model.predict(np.expand_dims(tensor, axis=0))
 test_accuracy = 100*np.sum(np.array(dog_breed_predictions)==np.argmax(test_targets, axis=1))/len(dog_breed_predictions)
 print('Test accuracy: %.4f%%' % test_accuracy)
 
+
+# Test accuracy: 4.1866% 提升-Test accuracy: 19.0191%
+# 
+# 提高准确率有很多小技巧～
+# 
+# >1.你可以使劲往上加层，直到它在测试集上过拟合，然后再加正则化和数据增强
+# 
+# >2.如果不过拟合了，再接着往上加层
+# 
+# 通常模型的大小取决于数据的量和复杂度，但是如果你使用max-pooling，你需要增加向上的每一层的神经元（比如你可以double一下）。通常在dense layer之前有2-5层，kernel size 3-5就差不多。你也可以用grid search找一组比较满意的参数～
+# 
+# 常用的正则化方法：
+# 
+# >batch normalization. 防止梯度消失～你可以参阅这篇文章：[Batch Normalization: Accelerating Deep Network Training by Reducing Internal Covariate Shift](https://arxiv.org/pdf/1502.03167v3.pdf)
+# 
+# >Max-Norm regularization & Dropout. 你可以参阅这篇文章: [Dropout: A Simple Way to Prevent Neural Networks from Overfitting](http://jmlr.org/papers/volume15/srivastava14a/srivastava14a.pdf)
+# 
+# >L1 / L2 weight regularization
+# Sparsity regularization (e.g. [Sparse deep belief net model for visual area V2] (http://web.eecs.umich.edu/~honglak/nips07-sparseDBN.pdf))
+# 
+# >Gradient clipping (在成本领域进行更彻底的搜索)
+# 
+# >Data augmentation. Data augmentation可以增加你的数据集，从而防止过度拟合。而且max-out units在最近的图像分类竞赛中很成功: [Galaxy Zoo challenge on Kaggle](https://benanne.github.io/2014/04/05/galaxy-zoo.html) 和 [Classifying plankton with deep neural networks](https://benanne.github.io/2015/03/17/plankton.html)
+# 
+# （出自： [some advices about how to improve the performance of Convolutional Neural Networks）](https://www.researchgate.net/post/Could_you_give_me_some_advices_about_how_to_improve_the_performance_of_Convolutional_Neural_Networks)
+# 
+# 更多的阅读资料：
+# 
+# >[What is maxout in neural network?](https://stats.stackexchange.com/questions/129698/what-is-maxout-in-neural-network)
+# 
+# >[What is the difference between max pooling and max out?](https://www.quora.com/What-is-the-difference-between-max-pooling-and-max-out)
+# 
+# >[Maxout Networks](https://arxiv.org/pdf/1302.4389.pdf)
 
 # ---
 # <a id='step4'></a>
@@ -784,7 +898,7 @@ print('Test accuracy: %.4f%%' % test_accuracy)
 
 # ### 得到从图像中提取的特征向量（Bottleneck Features）
 
-# In[31]:
+# In[64]:
 
 
 bottleneck_features = np.load('/data/bottleneck_features/DogVGG16Data.npz')
@@ -797,7 +911,7 @@ test_VGG16 = bottleneck_features['test']
 # 
 # 该模型使用预训练的 VGG-16 模型作为固定的图像特征提取器，其中 VGG-16 最后一层卷积层的输出被直接输入到我们的模型。我们只需要添加一个全局平均池化层以及一个全连接层，其中全连接层使用 softmax 激活函数，对每一个狗的种类都包含一个节点。
 
-# In[32]:
+# In[65]:
 
 
 VGG16_model = Sequential()
@@ -807,17 +921,19 @@ VGG16_model.add(Dense(133, activation='softmax'))
 VGG16_model.summary()
 
 
-# In[33]:
+# In[66]:
 
 
 ## 编译模型
+
 VGG16_model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
 
 
-# In[34]:
+# In[67]:
 
 
 ## 训练模型
+
 checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.VGG16.hdf5', 
                                verbose=1, save_best_only=True)
 
@@ -827,17 +943,18 @@ VGG16_model.fit(train_VGG16, train_targets,
 
 
 
-# In[35]:
+# In[68]:
 
 
 ## 加载具有最好验证loss的模型
+
 VGG16_model.load_weights('saved_models/weights.best.VGG16.hdf5')
 
 
 # ### 测试模型
 # 现在，我们可以测试此CNN在狗图像测试数据集中识别品种的效果如何。我们在下方打印出测试准确率。
 
-# In[36]:
+# In[69]:
 
 
 # 获取测试数据集中每一个图像所预测的狗品种的index
@@ -893,14 +1010,46 @@ def VGG16_predict_breed(img_path):
 #     valid_{network} = bottleneck_features['valid']
 #     test_{network} = bottleneck_features['test']
 
-# In[38]:
+# 关于四个架构的区别，请参考这篇文章：ImageNet: [VGGNet, ResNet, Inception, and Xception with Keras](https://www.pyimagesearch.com/2017/03/20/imagenet-vggnet-resnet-inception-xception-keras/)
+
+# In[28]:
 
 
 ### TODO: 从另一个预训练的CNN获取bottleneck特征
-bottleneck_features = np.load('/data/bottleneck_features/DogInceptionV3Data.npz')
-train_Inception = bottleneck_features['train']
-valid_Inception = bottleneck_features['valid']
-test_Inception = bottleneck_features['test']
+bottleneck_features_VGG19 = np.load('/data/bottleneck_features/DogVGG19Data.npz')
+train_VGG19 = bottleneck_features_VGG19['train']
+valid_VGG19 = bottleneck_features_VGG19['valid']
+test_VGG19 = bottleneck_features_VGG19['test']
+
+
+# In[33]:
+
+
+### TODO: 从另一个预训练的CNN获取bottleneck特征
+bottleneck_features_Resnet50 = np.load('/data/bottleneck_features/DogResnet50Data.npz')
+train_Resnet50 = bottleneck_features_Resnet50['train']
+valid_Resnet50 = bottleneck_features_Resnet50['valid']
+test_Resnet50 = bottleneck_features_Resnet50['test']
+
+
+# In[16]:
+
+
+### TODO: 从另一个预训练的CNN获取bottleneck特征
+bottleneck_features_Inception = np.load('/data/bottleneck_features/DogInceptionV3Data.npz')
+train_Inception = bottleneck_features_Inception['train']
+valid_Inception = bottleneck_features_Inception['valid']
+test_Inception = bottleneck_features_Inception['test']
+
+
+# In[17]:
+
+
+### TODO: 从另一个预训练的CNN获取bottleneck特征
+bottleneck_features_Xception = np.load('/data/bottleneck_features/DogXceptionData.npz')
+train_Xception = bottleneck_features_Xception['train']
+valid_Xception = bottleneck_features_Xception['valid']
+test_Xception = bottleneck_features_Xception['test']
 
 
 # ### 【练习】模型架构
@@ -921,34 +1070,62 @@ test_Inception = bottleneck_features['test']
 # 
 # __回答:__ 
 # 
-# 我的网络架构如下，首先是GAP层-提取和压缩经过Inception Net学习的特征，然后送入有500个节点的FC全连接层，然后设定Dropout为0.2，最后是133的全连接层，使用softmax分类。
+# ### 1.
+# 对于每个模型我都训练了20个epochs，batch_size=20
 # 
-# >从imagenet获取的inception训练模型，已经包含了足够的图像信息，不用再添加额外的Conv层来学习数据，所以在这里我选择了使用GAP层去压缩和总结信息。
+# >VGG -72.7273%
 # 
-# >之后，使用一个500个节点的FC全连接层。使用这个全连接层的原因是，把inception最后的全连接层除以2得来的。
+# >ResNet-50 - 82.6555%
 # 
-# >之后，使用relu激活函数，0.5的dropout率是给予经验选择的，其实在最后的验证率上0.5， 0.4， 0.3， 0.2都差不多。
+# >Inception - 80.6220%
+# 
+# >Xception - 80.6220%
+# 
+# 从准确率上来看，ResNet50有最高的准确率，对于内存的要求来说Xception最小，在准确率上，我认为通过微调，Xception可以达到和Resnet相当的水平，所以在这里我选择Xception作为架构。
+# 
+# 我的网络架构如下，首先是GAP层-提取和压缩经过Xception Net学习的特征，然后送入有500个节点的FC全连接层，然后设定Dropout为0.2，最后是133的全连接层，使用softmax分类。
+# 
+# 从imagenet获取的inception训练模型，已经包含了足够的图像信息，不用再添加额外的Conv层来学习数据，所以在这里我选择了使用GAP层去压缩和总结信息。
+# 
+# 之后，使用一个500个节点的FC全连接层。使用这个全连接层的原因是，把inception最后的全连接层除以2得来的。
+# 
+# 之后，使用relu激活函数，0.5的dropout率是给予经验选择的，其实在最后的验证率上0.5， 0.4， 0.3， 0.2都差不多。
+# 
+# ### 2.
+# 
+# 为什么这一架构会在这一分类任务中成功？
+# >这四个架构都是经过反复多次实验确定的，非常有效果的架构。以Inception net为例，inception net是多层特征提取器，通过分别多次同时提取特征，然后叠加，就可以学到不同层次的特征，所以效果非常好。
+# 
+# 为什么早期（第三步 ）的尝试不成功？
+# >第三步中，第一，使用的网络在架构上，非常浅，学到的特征非常少，其次学习库非常小，上面四个网络是在Imagenet上经过大量训练在不同种类的训练集上得来的，这是这个小库无法比拟的。
 
-# In[39]:
+# In[58]:
 
 
+from keras.layers import Conv2D, MaxPooling2D, GlobalAveragePooling2D
+from keras.layers import Dropout, Flatten, Dense, Activation, BatchNormalization
+from keras.models import Sequential
+
+test_model = Sequential()
 ### TODO: 定义你的框架
-Inception_model = Sequential()
-Inception_model.add(GlobalAveragePooling2D(input_shape=train_Inception.shape[1:]))
-Inception_model.add(Dense(500))
-Inception_model.add(Activation("relu"))
-Inception_model.add(Dropout(0.5))
-Inception_model.add(Dense(133, activation='softmax'))
+test_model = Sequential()
+test_model.add(GlobalAveragePooling2D(input_shape=train_Xception.shape[1:]))
+test_model.add(Dense(500))
+test_model.add(Activation("relu"))
+test_model.add(Dropout(0.5))
+test_model.add(Dense(133, activation='softmax'))
 
-Inception_model.summary()
-
-
-# In[40]:
+test_model.summary()
 
 
-### TODO: 编译模型
-Inception_model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+# In[59]:
 
+
+test_model.compile(loss='categorical_crossentropy', optimizer='rmsprop', metrics=['accuracy'])
+
+
+# 推荐尝试一下Adam优化器的，时下比较流行，相比于AdaGrad, RMSProp, SGDNesterov 和 AdaDelta来说效率更高～可以参考一下这篇文章：[Gentle Introduction to the Adam Optimization Algorithm for Deep Learning](https://machinelearningmastery.com/adam-optimization-algorithm-for-deep-learning/)
+# 就像你在第三步时用的那样～
 
 # ---
 # 
@@ -963,55 +1140,78 @@ Inception_model.compile(loss='categorical_crossentropy', optimizer='rmsprop', me
 # 当然，你也可以对训练集进行 [数据增强](https://blog.keras.io/building-powerful-image-classification-models-using-very-little-data.html) 以优化模型的表现，不过这不是必须的步骤。
 # 
 
+# In[37]:
+
+
+from keras.callbacks import ModelCheckpoint, EarlyStopping
+### TODO: 训练模型
+checkpointer_VGG19 = ModelCheckpoint(filepath='saved_models/weights.best.VGG19_model.hdf5', 
+                               verbose=1, save_best_only=True)
+
+test_model.fit(train_VGG19, train_targets, 
+          validation_data=(valid_VGG19, valid_targets),
+          epochs=20, batch_size=20, callbacks=[checkpointer_VGG19], verbose=1)
+
+
+# In[50]:
+
+
+checkpointer_Resnet = ModelCheckpoint(filepath='saved_models/weights.best.Resnet_model.hdf5', 
+                               verbose=1, save_best_only=True)
+
+test_model.fit(train_Resnet50, train_targets, 
+          validation_data=(valid_Resnet50, valid_targets),
+          epochs=20, batch_size=20, callbacks=[checkpointer_Resnet], verbose=1)
+
+
+# In[55]:
+
+
+checkpointer_Inception = ModelCheckpoint(filepath='saved_models/weights.best.Inc_model.hdf5', 
+                               verbose=1, save_best_only=True)
+
+test_model.fit(train_Inception, train_targets, 
+          validation_data=(valid_Inception, valid_targets),
+          epochs=20, batch_size=20, callbacks=[checkpointer_Inception], verbose=1)
+
+
+# In[60]:
+
+
+checkpointer_X = ModelCheckpoint(filepath='saved_models/weights.best.X_model.hdf5', 
+                               verbose=1, save_best_only=True)
+
+test_model.fit(train_Xception, train_targets, 
+          validation_data=(valid_Xception, valid_targets),
+          epochs=20, batch_size=20, callbacks=[checkpointer_X], verbose=1)
+
+
 # In[41]:
 
 
-### TODO: 训练模型
-checkpointer = ModelCheckpoint(filepath='saved_models/weights.best.Inc_model.hdf5', 
-                               verbose=1, save_best_only=True)
-
-Inception_model.fit(train_Inception, train_targets, 
-          validation_data=(valid_Inception, valid_targets),
-          epochs=20, batch_size=20, callbacks=[checkpointer], verbose=1)
+test_model.load_weights('saved_models/weights.best.VGG19_model.hdf5')
+VGG19_predictions = [np.argmax(test_model.predict(np.expand_dims(feature, axis=0))) for feature in test_VGG19]
 
 
-# In[42]:
+# In[51]:
 
 
-### TODO: 加载具有最佳验证loss的模型权重
-Inception_model.load_weights('saved_models/weights.best.Inc_model.hdf5')
-Inception_predictions = [np.argmax(Inception_model.predict(np.expand_dims(feature, axis=0))) for feature in test_Inception]
+test_model.load_weights('saved_models/weights.best.Resnet_model.hdf5')
+Resnet_predictions = [np.argmax(test_model.predict(np.expand_dims(feature, axis=0))) for feature in test_Resnet50]
 
 
-# In[43]:
+# In[56]:
 
 
-'''
-from keras.preprocessing.image import ImageDataGenerator
+test_model.load_weights('saved_models/weights.best.Inc_model.hdf5')
+Inception_predictions = [np.argmax(test_model.predict(np.expand_dims(feature, axis=0))) for feature in test_Inception]
 
-# create and configure augmented image generator
-datagen_train = ImageDataGenerator(
-    width_shift_range=0.1,  # randomly shift images horizontally (10% of total width)
-    height_shift_range=0.1,  # randomly shift images vertically (10% of total height)
-    horizontal_flip=True) # randomly flip images horizontally
 
-# fit augmented image generator on data
-datagen_train.fit(train_Inception)
+# In[61]:
 
-from keras.callbacks import ModelCheckpoint   
 
-batch_size = 20
-epochs = 20
-
-# train the model
-checkpointer = ModelCheckpoint(filepath='augtest/aug_model.weights.best.hdf5', verbose=1, 
-                               save_best_only=True)
-Inception_model.fit_generator(datagen_train.flow(train_Inception, train_targets, batch_size=batch_size),
-                    steps_per_epoch=train_tensors.shape[0] // batch_size,
-                    epochs=epochs, verbose=2, callbacks=[checkpointer],
-                    validation_data=(valid_Inception, valid_targets),
-                    validation_steps=valid_tensors.shape[0] // batch_size)
-'''                    
+test_model.load_weights('saved_models/weights.best.X_model.hdf5')
+Xception_predictions = [np.argmax(test_model.predict(np.expand_dims(feature, axis=0))) for feature in test_Xception]
 
 
 # ---
@@ -1024,11 +1224,32 @@ Inception_model.fit_generator(datagen_train.flow(train_Inception, train_targets,
 # 
 # 在狗图像的测试数据集上试用你的模型。确保测试准确率大于60%。
 
-# In[44]:
+# In[43]:
+
+
+test_accuracy_VGG19 = 100*np.sum(np.array(VGG19_predictions)==np.argmax(test_targets, axis=1))/len(VGG19_predictions)
+print('Test accuracy: %.4f%%' % test_accuracy_VGG19)
+
+
+# In[52]:
+
+
+test_accuracy_Resnet = 100*np.sum(np.array(Resnet_predictions)==np.argmax(test_targets, axis=1))/len(Resnet_predictions)
+print('Test accuracy: %.4f%%' % test_accuracy_Resnet)
+
+
+# In[57]:
 
 
 ### TODO: 在测试集上计算分类准确率
 test_accuracy = 100*np.sum(np.array(Inception_predictions)==np.argmax(test_targets, axis=1))/len(Inception_predictions)
+print('Test accuracy: %.4f%%' % test_accuracy)
+
+
+# In[62]:
+
+
+test_accuracy_Xception = 100*np.sum(np.array(Xception_predictions)==np.argmax(test_targets, axis=1))/len(Xception_predictions)
 print('Test accuracy: %.4f%%' % test_accuracy)
 
 
@@ -1128,7 +1349,26 @@ def dog_human_guess(img_path):
 # 同时请回答如下问题：
 # 
 # 1. 输出结果比你预想的要好吗 :) ？或者更糟 :( ？
+# >输出的结果，我是比较满意的。
 # 2. 提出至少三点改进你的模型的想法。
+# 
+# >a. 提高训练的epoch数，这里只训练了20个比较少
+# 
+# >b. 使用数据增强
+# 
+# >c. 把人和狗的图片做相似度分析，把相似度作为变量加入模型。
+
+# ![Affenpinscher_00003.jpg](attachment:Affenpinscher_00003.jpg)
+# 
+# ![Afghan_hound_00116.jpg](attachment:Afghan_hound_00116.jpg)
+# 
+# ![Airedale_terrier_00175.jpg](attachment:Airedale_terrier_00175.jpg)
+# 
+# ![Aaron_Eckhart_0001.jpg](attachment:Aaron_Eckhart_0001.jpg)
+# 
+# ![Aaron_Guiel_0001.jpg](attachment:Aaron_Guiel_0001.jpg)
+# 
+# ![Aaron_Patterson_0001.jpg](attachment:Aaron_Patterson_0001.jpg)
 
 # In[49]:
 
