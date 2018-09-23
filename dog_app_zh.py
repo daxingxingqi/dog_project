@@ -105,7 +105,7 @@
 #     print (item[20:-1])
 # ```    
 
-# In[25]:
+# In[3]:
 
 
 from sklearn.datasets import load_files       
@@ -1358,17 +1358,55 @@ def dog_human_guess(img_path):
 # 
 # >c. 把人和狗的图片做相似度分析，把相似度作为变量加入模型。
 
-# ![Affenpinscher_00003.jpg](attachment:Affenpinscher_00003.jpg)
-# 
-# ![Afghan_hound_00116.jpg](attachment:Afghan_hound_00116.jpg)
-# 
-# ![Airedale_terrier_00175.jpg](attachment:Airedale_terrier_00175.jpg)
-# 
-# ![Aaron_Eckhart_0001.jpg](attachment:Aaron_Eckhart_0001.jpg)
-# 
-# ![Aaron_Guiel_0001.jpg](attachment:Aaron_Guiel_0001.jpg)
-# 
-# ![Aaron_Patterson_0001.jpg](attachment:Aaron_Patterson_0001.jpg)
+# In[7]:
+
+
+import matplotlib.pyplot as plt # plt 用于显示图片
+import matplotlib.image as mpimg # mpimg 用于读取图片
+import numpy as np
+
+lena = mpimg.imread('/data/dog_images/test/001.Affenpinscher/Affenpinscher_00003.jpg') # 读取和代码处于同一目录下的 lena.png
+# 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
+lena.shape #(512, 512, 3)
+plt.imshow(lena) # 显示图片
+plt.axis('on') # 不显示坐标轴
+plt.show()
+
+lena = mpimg.imread('/data/dog_images/test/002.Afghan_hound/Afghan_hound_00116.jpg') # 读取和代码处于同一目录下的 lena.png
+# 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
+lena.shape #(512, 512, 3)
+plt.imshow(lena) # 显示图片
+plt.axis('on') # 不显示坐标轴
+plt.show()
+
+lena = mpimg.imread('/data/dog_images/test/003.Airedale_terrier/Airedale_terrier_00175.jpg') # 读取和代码处于同一目录下的 lena.png
+# 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
+lena.shape #(512, 512, 3)
+plt.imshow(lena) # 显示图片
+plt.axis('on') # 不显示坐标轴
+plt.show()
+
+lena = mpimg.imread('/data/lfw/Aaron_Eckhart/Aaron_Eckhart_0001.jpg') # 读取和代码处于同一目录下的 lena.png
+# 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
+lena.shape #(512, 512, 3)
+plt.imshow(lena) # 显示图片
+plt.axis('on') # 不显示坐标轴
+plt.show()
+
+lena = mpimg.imread('/data/lfw/Aaron_Guiel/Aaron_Guiel_0001.jpg') # 读取和代码处于同一目录下的 lena.png
+# 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
+lena.shape #(512, 512, 3)
+plt.imshow(lena) # 显示图片
+plt.axis('on') # 不显示坐标轴
+plt.show()
+
+lena = mpimg.imread('/data/lfw/Aaron_Peirsol/Aaron_Peirsol_0002.jpg') # 读取和代码处于同一目录下的 lena.png
+# 此时 lena 就已经是一个 np.array 了，可以对它进行任意处理
+lena.shape #(512, 512, 3)
+plt.imshow(lena) # 显示图片
+plt.axis('on') # 不显示坐标轴
+plt.show()
+
 
 # In[49]:
 
